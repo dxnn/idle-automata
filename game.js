@@ -4,10 +4,13 @@ var w = 80
 var h = 40
 var grid = []
 var last = 0
-var rate = 1000
-var ducats = 10000
+var ducats = 10
 var paused = false
-var handlers = {}
+var base_rate = 1000
+var base_life = 3
+var archetypes = {}
+var base_ducats = 1
+var render_rate = 100
 var current_symbol = 'a'
 var el_grid, el_ducats, el_buttons
 
@@ -39,7 +42,8 @@ function time_to_tock(ms) {
   var diff = ms - last
 
   // how many ticks should we do?
-  var ticks = diff / rate
+  // TODO: this doesn't work for ticks < 1
+  var ticks = diff / base_rate
 
   // call tock
   tock(ticks)
@@ -54,12 +58,13 @@ function loop() {
 
 function looper() {
   loop()
-  window.requestAnimationFrame(looper)
+  // window.requestAnimationFrame(looper)
+  window.setTimeout(looper, render_rate)
 }
 
 function set_type(cell, type) {
   cell.char = type
-  cell.handler = handlers[type]
+  cell.handler = archetypes[type]
 }
 
 function add_nabes(cell, index) {
@@ -93,24 +98,25 @@ function get_torus_cell(index, dx, dy) {
 function build_archetypes() {
   // a-z basic countdown (?)
   charloop('a', 'z', function(char) {
-    // create the handler
-    handlers[char] = clone(handler)
+    // create the basic archetype
+    archetypes[char] = clone(archetype_archetype)
+    archetypes[char].price = Math.pow(4, char.charCodeAt() - 97)
 
     // set 'life' for cell
     // THINK: different types should have different amounts of life
     addhand(char, 'init', function(cell) {
-      cell.life = 6
+      cell.life = base_life
     })
   })
 
   // a adds $ each tick and on revert
   addhand('a', 'go', function(cell) {
-    ducats += 1
+    ducats += base_ducats
     cell.life -= 1
   })
 
   addhand('a', 'post', function(cell) {
-    ducats += 1
+    ducats += base_ducats
   })
 
   // b-z spawn N times then revert
@@ -148,7 +154,7 @@ function run(cell, handler) {
 
 function spawn(cell, char) {
   cell.char = char
-  cell.handler = handlers[char]
+  cell.handler = archetypes[char]
   run(cell, 'init')
 }
 
@@ -163,14 +169,15 @@ function new_cell(i) {
          }
 }
 
-var handler = { init: []
-              , pre:  []
-              , go:   []
-              , post: []
-              }
+var archetype_archetype = { init: []
+                          , pre:  []
+                          , go:   []
+                          , post: []
+                          , price: 1
+                          }
 
 function addhand(char, handle, fun) {
-  handlers[char][handle].push(fun)
+  archetypes[char][handle].push(fun)
 }
 
 
@@ -216,7 +223,7 @@ function click_to_index(ev) {
 
 function set_symbol(index, char) {
   // check ducats
-  var price = 1000 // TODO: get real price
+  var price = archetypes[char].price
   if(price > ducats) {
     log("you can't afford that!")
     return
