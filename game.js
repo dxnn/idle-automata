@@ -1,14 +1,15 @@
 // an idle game featuring automata and fun
 
-var w = 40
-var h = 80
+var w = 80
+var h = 40
 var grid = []
 var last = 0
 var rate = 1000
-var ducats = 1
+var ducats = 10000
 var paused = false
 var handlers = {}
-var el_grid, el_ducats
+var current_symbol = 'a'
+var el_grid, el_ducats, el_buttons
 
 function tick() {
   // TODO: poke the cells in arbitrary order
@@ -59,27 +60,6 @@ function looper() {
 function set_type(cell, type) {
   cell.char = type
   cell.handler = handlers[type]
-}
-
-function init() {
-  // set up grid
-  for(var i=0; i < w*h; i++) {
-    grid[i] = new_cell(i)
-  }
-
-  // set up stats
-  last = Date.now()
-  el_grid = document.getElementById('grid')
-  el_ducats = document.getElementById('ducats')
-
-  // set up nabes and diags
-  for(var i=0; i < w*h; i++) {
-    add_nabes(grid[i], i)
-    add_diags(grid[i], i)
-  }
-
-  build_archetypes()
-  looper()
 }
 
 function add_nabes(cell, index) {
@@ -191,6 +171,61 @@ var handler = { init: []
 
 function addhand(char, handle, fun) {
   handlers[char][handle].push(fun)
+}
+
+
+// init
+
+function init() {
+  // set up grid
+  for(var i=0; i < w*h; i++) {
+    grid[i] = new_cell(i)
+  }
+
+  // set up stats
+  last = Date.now()
+  var el = document.getElementById.bind(document)
+  el_grid = el('grid')
+  el_ducats = el('ducats')
+
+  // set up nabes and diags
+  for(var i=0; i < w*h; i++) {
+    add_nabes(grid[i], i)
+    add_diags(grid[i], i)
+  }
+
+  // button events
+  el_buttons = el('buttons')
+  el_buttons.addEventListener('click', function(ev) {
+    current_symbol = ev.target.id
+  })
+  el_grid.addEventListener('click', function(ev) {
+    var index = click_to_index(ev)
+    set_symbol(index, current_symbol)
+  })
+
+  build_archetypes()
+  looper()
+}
+
+// buttons
+
+function click_to_index(ev) {
+  return 55
+}
+
+function set_symbol(index, char) {
+  // check ducats
+  var price = 1000 // TODO: get real price
+  if(price > ducats) {
+    log("you can't afford that!")
+    return
+  }
+
+  // THINK: check current symbol is lesser?
+
+  spawn(grid[index], char)
+  ducats -= price
 }
 
 // renderer
