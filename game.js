@@ -1,7 +1,7 @@
 // an idle game featuring automata and fun
 
 var w = 40
-var h = 40
+var h = 80
 var grid = []
 var last = 0
 var rate = 1000
@@ -11,10 +11,10 @@ var handlers = {}
 var el_grid, el_ducats
 
 function tick() {
-  // poke each cell, in arbitrary order
+  // TODO: poke the cells in arbitrary order
   for(var i=0; i < w*h; i++) {
     var cell = grid[i]
-    if(cell.handler) break
+    if(!cell.handler) continue
     run(cell, 'go')
     if(!cell.life) {
       run(cell, 'post')
@@ -33,31 +33,6 @@ function tock(n) {
   last = Date.now()
 }
 
-function render() {
-  // update cell display
-  render_cells()
-
-  // update stats display
-  render_stats()
-}
-
-function render_cells() {
-  el_grid.textContent = grid_to_string()
-}
-
-function grid_to_string() {
-  var str = ""
-  for(var i=0; i < w*h; i++) {
-    if(!i%w) str += "\n"
-    str += grid[i].char
-  }
-  return str
-}
-
-function render_stats() {
-  el_ducats.textContent = ducats
-}
-
 function time_to_tock(ms) {
   // when was our last tock?
   var diff = ms - last
@@ -73,6 +48,7 @@ function loop() {
   if(paused) return
   var time = Date.now()         // get current time
   time_to_tock(time)
+  render()
 }
 
 function looper() {
@@ -103,6 +79,7 @@ function init() {
   }
 
   build_archetypes()
+  looper()
 }
 
 function add_nabes(cell, index) {
@@ -113,10 +90,10 @@ function add_nabes(cell, index) {
 }
 
 function add_diags(cell, index) {
-  cell.nabes.push(get_torus_cell(index, 1,  -1))
-  cell.nabes.push(get_torus_cell(index, 1,   1))
-  cell.nabes.push(get_torus_cell(index, -1,  1))
-  cell.nabes.push(get_torus_cell(index, -1, -1))
+  cell.diags.push(get_torus_cell(index, 1,  -1))
+  cell.diags.push(get_torus_cell(index, 1,   1))
+  cell.diags.push(get_torus_cell(index, -1,  1))
+  cell.diags.push(get_torus_cell(index, -1, -1))
 }
 
 function get_torus_cell(index, dx, dy) {
@@ -139,10 +116,10 @@ function build_archetypes() {
     // create the handler
     handlers[char] = clone(handler)
 
-    // set 'life' for cell to 8
+    // set 'life' for cell
     // THINK: different types should have different amounts of life
     addhand(char, 'init', function(cell) {
-      cell.life = 8
+      cell.life = 6
     })
   })
 
@@ -170,15 +147,20 @@ function build_archetypes() {
 function find_free_nabe(cell) {
   // TODO: check in arbitrary order
   var nabe
-  if(nabe = get_torus_cell(cell.index, 0,  1)) return nabe
-  if(nabe = get_torus_cell(cell.index, 0, -1)) return nabe
-  if(nabe = get_torus_cell(cell.index, 1,  0)) return nabe
-  if(nabe = get_torus_cell(cell.index, -1, 0)) return nabe
+  nabe = get_torus_cell(cell.index, 0,  1)
+  if(nabe && nabe.char == " ") return nabe
+  nabe = get_torus_cell(cell.index, 0, -1)
+  if(nabe && nabe.char == " ") return nabe
+  nabe = get_torus_cell(cell.index, 1,  0)
+  if(nabe && nabe.char == " ") return nabe
+  nabe = get_torus_cell(cell.index, -1, 0)
+  if(nabe && nabe.char == " ") return nabe
   return false
 }
 
 function run(cell, handler) {
-  var hands = cell.handlers[handler]
+  if(!cell.handler) return
+  var hands = cell.handler[handler]
   var len = hands.length
   for(var i=0; i<len; i++)
     hands[i](cell)
@@ -211,6 +193,31 @@ function addhand(char, handle, fun) {
   handlers[char][handle].push(fun)
 }
 
+// renderer
+
+function render() {
+  render_cells()
+  render_stats()
+}
+
+function render_cells() {
+  el_grid.textContent = grid_to_string()
+}
+
+function grid_to_string() {
+  var str = ""
+  for(var i=0; i < w*h; i++) {
+    if(i%w == 0) str += "\n"
+    str += grid[i].char
+  }
+  return str
+}
+
+function render_stats() {
+  el_ducats.textContent = ducats
+}
+
+
 // helpers
 
 function charloop(from, last, fun) {
@@ -218,8 +225,8 @@ function charloop(from, last, fun) {
   var last_ord = last.charCodeAt()
   var args = [].slice.call(arguments, 3)
 
-  for(var i=from_ord; i < last_ord; i++)
-    fun(String.fromCharCode(), args)
+  for(var i=from_ord; i <= last_ord; i++)
+    fun(String.fromCharCode(i), args)
 }
 
 function noop() {}
