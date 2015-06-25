@@ -218,7 +218,10 @@ function init() {
 // buttons
 
 function click_to_index(ev) {
-  return 55
+  var sel = window.getSelection()
+  // console.log(selection.focusNode.data[selection.focusOffset]);
+  var index = sel.focusOffset
+  return index - Math.floor(index / w) // remove newlines
 }
 
 function set_symbol(index, char) {
