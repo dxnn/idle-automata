@@ -4,31 +4,31 @@
     <style>
       #grid {
         font-family: monospace;
-        background-color: #fdd;
+        background-color: #fffcfc;
+        cursor: crosshair;
+      }
+      #buttons span {
+        padding: 2px 10px 2px 5px;
+        background-color: aliceblue;
+        margin: 2px;
+      }
+      #buttons span.selected {
+        background-color: pink;
       }
     </style>
-    <script>
-      function foo(x) {
-        console.log(x)
-      }
-    </script>
   </head>
   <body>
     <p>
-      Symbols: <span id="ducats">1</span>
+      Ducats: <span id="ducats">1</span>
     </p>
     <div>
-      <span>buttons</span>
+      <span>Generators</span>
       <span id="buttons">
-        <button id="a">a</button>
-        <button id="b">b</button>
-        <button id="c">c</button>
-        <button id="d">d</button>
-        <button id="e">e</button>
-        <button id="f">f</button>
-        <button id="g">g</button>
-        <button id="h">h</button>
-        <button id="i">i</button>
+      </span>
+    </div>
+    <div>
+      <span>Upgrades</span>
+      <span id="upgrades">
       </span>
     </div>
     <pre id="grid">

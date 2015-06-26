@@ -1,11 +1,23 @@
 // an idle game featuring automata and fun
 
+/* TODO:
+   - pause button
+   - "offline" mode catchup is different?
+   - fractional respect via Math.random()
+   - show buttons / upgrades as they're available
+   - different places for button vs upgrades
+   - upgrades:
+     - per archetype: increase life, increase ducats, increase rate, % increase to children cumulative
+     - overall: increate rate, add new game features (capital letters, new letters, symbols, fancy backgrounds (day/night), fertility bonus (w/ fancy highlight for good squares), ...)
+
+*/
 var w = 80
 var h = 40
 var grid = []
-var last = 0
-var ducats = 10
+var ducats = 1
 var paused = false
+var last_ms = 0
+var last_max = 0
 var base_rate = 1000
 var base_life = 3
 var archetypes = {}
@@ -34,12 +46,12 @@ function tock(n) {
   }
 
   // update last tock
-  last = Date.now()
+  last_ms = Date.now()
 }
 
 function time_to_tock(ms) {
   // when was our last tock?
-  var diff = ms - last
+  var diff = ms - last_ms
 
   // how many ticks should we do?
   // TODO: this doesn't work for ticks < 1
@@ -59,7 +71,7 @@ function loop() {
 function looper() {
   loop()
   // window.requestAnimationFrame(looper)
-  window.setTimeout(looper, render_rate)
+  window.setTimeout(looper, Math.max(base_rate, render_rate))
 }
 
 function set_type(cell, type) {
@@ -190,7 +202,7 @@ function init() {
   }
 
   // set up stats
-  last = Date.now()
+  last_ms = Date.now()
   var el = document.getElementById.bind(document)
   el_grid = el('grid')
   el_ducats = el('ducats')
@@ -205,6 +217,9 @@ function init() {
   el_buttons = el('buttons')
   el_buttons.addEventListener('click', function(ev) {
     current_symbol = ev.target.id
+    var q = document.querySelectorAll('#buttons span')
+    ;[].slice.call(q).forEach(function(el) {el.classList.remove('selected')})
+    el(current_symbol).classList.add('selected')
   })
   el_grid.addEventListener('click', function(ev) {
     var index = click_to_index(ev)
@@ -221,7 +236,7 @@ function click_to_index(ev) {
   var sel = window.getSelection()
   // console.log(selection.focusNode.data[selection.focusOffset]);
   var index = sel.focusOffset
-  return index - Math.floor(index / w) // remove newlines
+  return Math.max(0, index - 1 - Math.floor(index / w)) // remove newlines
 }
 
 function set_symbol(index, char) {
@@ -243,10 +258,31 @@ function set_symbol(index, char) {
 function render() {
   render_cells()
   render_stats()
+  render_buttons()
+  render_upgrades()
 }
 
 function render_cells() {
   el_grid.textContent = grid_to_string()
+}
+
+function render_stats() {
+  el_ducats.textContent = ducats
+}
+
+function render_buttons() {
+  if(ducats <= last_max) return
+
+  var new_button = get_new_button(last_max, ducats)
+  last_max = ducats
+  if(!new_button) return
+
+  // el_buttons.appendAfter(new_button)
+  // TODO: innerHTML is kind of a drag
+  el_buttons.innerHTML = new_button + el_buttons.innerHTML
+}
+
+function render_upgrades() {
 }
 
 function grid_to_string() {
@@ -258,10 +294,19 @@ function grid_to_string() {
   return str
 }
 
-function render_stats() {
-  el_ducats.textContent = ducats
+function get_new_button(low, high) {
+  for(var char in archetypes) {
+    var price = archetypes[char].price
+    if(low < price && price <= high)
+      return char_to_button(char)
+  }
+  return false
 }
 
+function char_to_button(char) {
+  var str = '<span id="' + char + '">' + char + '</span>'
+  return str
+}
 
 // helpers
 
