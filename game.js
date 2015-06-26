@@ -18,13 +18,14 @@ var ducats = 1
 var paused = false
 var last_ms = 0
 var last_max = 1
+var upgrades = {}
 var base_rate = 1000
 var base_life = 3
 var archetypes = {}
 var base_ducats = 1
 var render_rate = 100
 var current_symbol = 'a'
-var el_grid, el_ducats, el_buttons
+var el_grid, el_ducats, el_buttons, el_upgrades
 
 function tick() {
   // TODO: poke the cells in arbitrary order
@@ -142,6 +143,15 @@ function build_archetypes() {
   })
 }
 
+function build_upgrades() {
+  upgrades = 
+    { "go_faster": { price: 10
+                   , effect() { base_rate /= 2 }}
+    , "even_more": { price: 1000
+                   , effect() { base_rate /= 2 }}
+    }
+}
+
 function find_free_nabe(cell) {
   // TODO: check in arbitrary order
   var nabe
@@ -206,6 +216,8 @@ function init() {
   var el = document.getElementById.bind(document)
   el_grid = el('grid')
   el_ducats = el('ducats')
+  el_buttons = el('buttons')
+  el_upgrades = el('upgrades')
 
   // set up nabes and diags
   for(var i=0; i < w*h; i++) {
@@ -213,21 +225,43 @@ function init() {
     add_diags(grid[i], i)
   }
 
-  // button events
-  el_buttons = el('buttons')
+  // event bindings
   el_buttons.addEventListener('click', function(ev) {
     current_symbol = ev.target.id
-    var q = document.querySelectorAll('#buttons span')
-    ;[].slice.call(q).forEach(function(el) {el.classList.remove('selected')})
+    remove_class('#buttons span', 'selected')
     el(current_symbol).classList.add('selected')
   })
+
+  el_upgrades.addEventListener('click', function(ev) {
+    var upgrade = upgrades[ev.target.id]
+    if(buy_upgrade(upgrade))
+      el(ev.target.id).style.display = 'none'
+  })
+
   el_grid.addEventListener('click', function(ev) {
     var index = click_to_index(ev)
     set_symbol(index, current_symbol)
   })
 
   build_archetypes()
+  build_upgrades()
   looper()
+}
+
+function remove_class(query, classname) {
+  var q = document.querySelectorAll(query)
+  ;[].slice.call(q).forEach(function(el) {el.classList.remove(classname)})
+}
+
+function buy_upgrade(upgrade) {
+  var price = upgrade.price
+  if(price > ducats) {
+    log("you can't afford that upgrade!")
+    return false
+  }
+
+  upgrade.effect()
+  return true
 }
 
 // buttons
@@ -258,8 +292,7 @@ function set_symbol(index, char) {
 function render() {
   render_cells()
   render_stats()
-  render_buttons()
-  render_upgrades()
+  render_price_stuff()
 }
 
 function render_cells() {
@@ -270,19 +303,18 @@ function render_stats() {
   el_ducats.textContent = ducats
 }
 
-function render_buttons() {
+function render_price_stuff() {
   if(ducats <= last_max) return
 
-  var new_button = get_new_button(last_max, ducats)
+  var new_button  = get_new_buttons (last_max, ducats)
+  var new_upgrade = get_new_upgrades(last_max, ducats)
+
   last_max = ducats
-  if(!new_button) return
+  if(!new_button && !new_upgrade) return
 
-  // el_buttons.appendAfter(new_button)
   // TODO: innerHTML is kind of a drag
-  el_buttons.innerHTML = new_button + el_buttons.innerHTML
-}
-
-function render_upgrades() {
+  el_buttons .innerHTML = new_button  + el_buttons .innerHTML
+  el_upgrades.innerHTML = new_upgrade + el_upgrades.innerHTML
 }
 
 function grid_to_string() {
@@ -294,18 +326,28 @@ function grid_to_string() {
   return str
 }
 
-function get_new_button(low, high) {
+function get_new_buttons(low, high) {
+  var str = ''
   for(var char in archetypes) {
     var price = archetypes[char].price
     if(low < price && price <= high)
-      return char_to_button(char)
+      str = str_to_button(char) + str
   }
-  return false
+  return str
 }
 
-function char_to_button(char) {
-  var str = '<span id="' + char + '">' + char + '</span>'
+function get_new_upgrades(low, high) {
+  var str = ''
+  for(var name in upgrades) {
+    var price = upgrades[name].price
+    if(low < price && price <= high)
+      str = str_to_button(name) + str
+  }
   return str
+}
+
+function str_to_button(str) {
+  return '<span id="' + str + '">' + str + '</span>'
 }
 
 // helpers
