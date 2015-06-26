@@ -170,12 +170,13 @@ function find_free_nabe(cell) {
   // TODO: check in arbitrary order
   var nabe
   var dims = [[0, 1], [0, -1], [1, 0], [-1, 0]]
-  var str  = '012302130132'
-  var offset = rand(8)
-  var indices = str.substr(offset, 4).split('')
+  // var str  = '012302130132'
+  // var offset = rand(8)
+  // var indices = str.substr(offset, 4).split('')
 
   for(var i=0; i < 4; i++) {
-    nabe = get_torus_cell(cell.index, dims[indices[i]][0], dims[indices[i]][1])
+    var index = rand(3)
+    nabe = get_torus_cell(cell.index, dims[index][0], dims[index][1])
     if(nabe && nabe.char == " ") return nabe
   }
   // nabe = get_torus_cell(cell.index, 0,  1)
