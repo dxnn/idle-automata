@@ -33,7 +33,7 @@ function tick() {
     var cell = grid[i]
     if(!cell.handler) continue
     run(cell, 'go')
-    if(!cell.life) {
+    if(cell.life <= 0) {
       run(cell, 'post')
       spawn(cell, " ")
     }
@@ -56,7 +56,7 @@ function time_to_tock(ms) {
 
   // how many ticks should we do?
   // TODO: this doesn't work for ticks < 1
-  var ticks = diff / base_rate
+  var ticks = fancy_round(diff / base_rate)
 
   // call tock
   tock(ticks)
@@ -118,18 +118,18 @@ function build_archetypes() {
     // set 'life' for cell
     // THINK: different types should have different amounts of life
     addhand(char, 'init', function(cell) {
-      cell.life = base_life
+      cell.life = fancy_round(base_life)
     })
   })
 
   // a adds $ each tick and on revert
   addhand('a', 'go', function(cell) {
-    ducats += base_ducats
+    ducats += fancy_round(base_ducats)
     cell.life -= 1
   })
 
   addhand('a', 'post', function(cell) {
-    ducats += base_ducats
+    ducats += fancy_round(base_ducats)
   })
 
   // b-z spawn N times then revert
@@ -147,8 +147,22 @@ function build_upgrades() {
   upgrades = 
     { "go_faster": { price: 10
                    , effect() { base_rate /= 2 }}
-    , "even_more": { price: 1000
+    , "more_fast": { price: 1000
                    , effect() { base_rate /= 2 }}
+    , "even_fast": { price: 100000
+                   , effect() { base_rate /= 2 }}
+    , "good_fast": { price: 1000000
+                   , effect() { base_rate /= 2 }}
+    , "keen_fast": { price: 1000000
+                   , effect() { base_rate /= 2 }}
+    , "more_life": { price: 10000
+                   , effect() { base_life *= 1.3 }}
+    , "even_life": { price: 1000000
+                   , effect() { base_life *= 1.3 }}
+    , "good_life": { price: 100000000
+                   , effect() { base_life *= 1.3 }}
+    , "more_gold": { price: 10000
+                   , effect() { base_ducats *= 1.3 }}
     }
 }
 
@@ -359,6 +373,10 @@ function charloop(from, last, fun) {
 
   for(var i=from_ord; i <= last_ord; i++)
     fun(String.fromCharCode(i), args)
+}
+
+function fancy_round(x) {
+  return (x|0) + (Math.random() < x%1)
 }
 
 function noop() {}
