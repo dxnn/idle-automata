@@ -169,14 +169,23 @@ function build_upgrades() {
 function find_free_nabe(cell) {
   // TODO: check in arbitrary order
   var nabe
-  nabe = get_torus_cell(cell.index, 0,  1)
-  if(nabe && nabe.char == " ") return nabe
-  nabe = get_torus_cell(cell.index, 0, -1)
-  if(nabe && nabe.char == " ") return nabe
-  nabe = get_torus_cell(cell.index, 1,  0)
-  if(nabe && nabe.char == " ") return nabe
-  nabe = get_torus_cell(cell.index, -1, 0)
-  if(nabe && nabe.char == " ") return nabe
+  var dims = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+  var str  = '012302130132'
+  var offset = rand(8)
+  var indices = str.substr(offset, 4).split('')
+
+  for(var i=0; i < 4; i++) {
+    nabe = get_torus_cell(cell.index, dims[indices[i]][0], dims[indices[i]][1])
+    if(nabe && nabe.char == " ") return nabe
+  }
+  // nabe = get_torus_cell(cell.index, 0,  1)
+  // if(nabe && nabe.char == " ") return nabe
+  // nabe = get_torus_cell(cell.index, 0, -1)
+  // if(nabe && nabe.char == " ") return nabe
+  // nabe = get_torus_cell(cell.index, 1,  0)
+  // if(nabe && nabe.char == " ") return nabe
+  // nabe = get_torus_cell(cell.index, -1, 0)
+  // if(nabe && nabe.char == " ") return nabe
   return false
 }
 
@@ -377,6 +386,10 @@ function charloop(from, last, fun) {
 
 function fancy_round(x) {
   return (x|0) + (Math.random() < x%1)
+}
+
+function rand(n) {
+  return Math.floor(Math.random() * (n + 1))
 }
 
 function noop() {}
