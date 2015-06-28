@@ -386,6 +386,7 @@ function charloop(from, last, fun) {
 }
 
 function fancy_round(x) {
+  // probabilistically rounds to nearby integer
   return (x|0) + (Math.random() < x%1)
 }
 
