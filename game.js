@@ -24,7 +24,7 @@ var archetypes = {}
 var base_ducats = 1
 var render_rate = 100
 var current_symbol = 'a'
-var el_grid, el_ducats, el_buttons, el_upgrades
+var el_grid, el_ducats, el_buttons, el_upgrades, el_messages
 
 function tick() {
   // TODO: poke the cells in arbitrary order
@@ -258,6 +258,7 @@ function init() {
   el_ducats = el('ducats')
   el_buttons = el('buttons')
   el_upgrades = el('upgrades')
+  el_messages = el('messages')
 
   // set up nabes and diags
   for(var i=0; i < w*h; i++) {
@@ -421,8 +422,36 @@ function clone(obj) {
   }
 }
 
-function log(x) {
-  console.log(x)
+var clear_message = throttle(function() { el_messages.textContent = '' }, 3000)
+
+function log(str) {
+  console.log(str)
+  el_messages.textContent = str
+  clear_message()
+}
+
+function throttle(fun, ms) {
+  var timeout = false
+  return function() {
+    var new_timeout = setTimeout(function() {
+          fun()
+          timeout = false
+        }, ms)
+    if(timeout) clearTimeout(timeout)
+    timeout = new_timeout
+  }
+}
+
+function debounce(fun, ms) {
+  var busy = false
+  return function() {
+    if(busy) return
+    busy = true
+    setTimeout(function() {
+      fun() // THINK: could add args here maybe...
+      busy = false
+    }, ms)
+  }
 }
 
 init()
