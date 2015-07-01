@@ -1,11 +1,10 @@
 // an idle game featuring automata and fun
 
 /* TODO:
-   - pause button
-   - "offline" mode catchup is different?
-   - fractional respect via Math.random()
-   - show buttons / upgrades as they're available
-   - different places for button vs upgrades
+   - pause button / "offline" mode catchup is different?
+   -- fractional respect via Math.random()
+   -- show buttons / upgrades as they're available
+   -- different places for button vs upgrades
    - upgrades:
      - per archetype: increase life, increase ducats, increase rate, % increase to children cumulative
      - overall: increate rate, add new game features (capital letters, new letters, symbols, fancy backgrounds (day/night), fertility bonus (w/ fancy highlight for good squares), ...)
@@ -20,7 +19,7 @@ var last_ms = 0
 var last_max = 1
 var upgrades = {}
 var base_rate = 1000
-var base_life = 3
+var base_life = 1
 var archetypes = {}
 var base_ducats = 1
 var render_rate = 100
@@ -113,14 +112,17 @@ function build_archetypes() {
   charloop('a', 'z', function(char) {
     // create the basic archetype
     archetypes[char] = clone(archetype_archetype)
-    archetypes[char].price = Math.pow(4, char.charCodeAt() - 97)
+    var arch = archetypes[char]
+    arch.price = Math.pow(4, char.charCodeAt() - 97)
 
     // set 'life' for cell
     // THINK: different types should have different amounts of life
     addhand(char, 'init', function(cell) {
-      cell.life = fancy_round(base_life)
+      cell.life = fancy_round(base_life * arch.life)
     })
   })
+
+  archetypes['a'].life = 3 // set a.life manually
 
   // a adds $ each tick and on revert
   addhand('a', 'go', function(cell) {
@@ -144,7 +146,7 @@ function build_archetypes() {
 }
 
 function build_upgrades() {
-  upgrades = 
+  upgrades =
     { "go_faster": { price: 10
                    , effect() { base_rate /= 2 }}
     , "more_fast": { price: 1000
@@ -220,6 +222,7 @@ var archetype_archetype = { init: []
                           , go:   []
                           , post: []
                           , price: 1
+                          , life: 1
                           }
 
 function addhand(char, handle, fun) {
