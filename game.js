@@ -31,10 +31,18 @@ function tick() {
   for(var i=0; i < w*h; i++) {
     var cell = grid[i]
     if(!cell.handler) continue
+    if(cell.state == 'fresh') {
+      cell.state = ''
+      continue
+    }
+    if(cell.state == 'expired') {
+      spawn(cell, " ")
+      continue
+    }
     run(cell, 'go')
     if(cell.life <= 0) {
       run(cell, 'post')
-      spawn(cell, " ")
+      cell.state = 'expired'
     }
   }
 }
@@ -120,18 +128,21 @@ function build_archetypes() {
     addhand(char, 'init', function(cell) {
       cell.life = fancy_round(base_life * arch.life)
     })
+
+    // give some money when you go away
+    addhand(char, 'post', function(cell) {
+      ducats += fancy_round(base_ducats * archetypes[char].ducats)
+    })
   })
 
-  archetypes['a'].life = 3 // set a.life manually
+  // set some things manually
+  archetypes['a'].life = 3
+  archetypes['a'].ducats = 1
 
   // a adds $ each tick and on revert
   addhand('a', 'go', function(cell) {
-    ducats += fancy_round(base_ducats)
+    ducats += fancy_round(base_ducats * archetypes['a'].ducats)
     cell.life -= 1
-  })
-
-  addhand('a', 'post', function(cell) {
-    ducats += fancy_round(base_ducats)
   })
 
   // b-z spawn N times then revert
@@ -203,6 +214,7 @@ function run(cell, handler) {
 function spawn(cell, char) {
   cell.char = char
   cell.handler = archetypes[char]
+  cell.state = 'fresh'
   run(cell, 'init')
 }
 
@@ -222,6 +234,7 @@ var archetype_archetype = { init: []
                           , go:   []
                           , post: []
                           , price: 1
+                          , ducats: 0
                           , life: 1
                           }
 
