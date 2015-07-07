@@ -2,6 +2,12 @@
 
 /* TODO:
    - pause button / "offline" mode catchup is different?
+   - keyboard controls
+   - upgrades: expand life and gold per-item and small global very early
+   - a -> $, to show the ducats (each $ is a base-ducats ducat gain)
+   - show prices in upgrades and chars (or money is per-char? so you have to gain different types?)
+   - clicking a symbol eats it for half its total value (recursive) [maybe, though auto-eaters are better, and half is probably too high (avoid clickers)]
+   - unicode characters
    -- fractional respect via Math.random()
    -- show buttons / upgrades as they're available
    -- different places for button vs upgrades
@@ -88,15 +94,15 @@ function set_type(cell, type) {
 }
 
 function add_nabes(cell, index) {
-  cell.nabes.push(get_torus_cell(index, 0, -1))
-  cell.nabes.push(get_torus_cell(index, 0,  1))
-  cell.nabes.push(get_torus_cell(index, -1, 0))
-  cell.nabes.push(get_torus_cell(index,  1, 0))
+  cell.nabes.push(get_torus_cell(index,  0, -1))
+  cell.nabes.push(get_torus_cell(index,  0,  1))
+  cell.nabes.push(get_torus_cell(index, -1,  0))
+  cell.nabes.push(get_torus_cell(index,  1,  0))
 }
 
 function add_diags(cell, index) {
-  cell.diags.push(get_torus_cell(index, 1,  -1))
-  cell.diags.push(get_torus_cell(index, 1,   1))
+  cell.diags.push(get_torus_cell(index,  1, -1))
+  cell.diags.push(get_torus_cell(index,  1,  1))
   cell.diags.push(get_torus_cell(index, -1,  1))
   cell.diags.push(get_torus_cell(index, -1, -1))
 }
@@ -116,6 +122,16 @@ function get_torus_cell(index, dx, dy) {
 }
 
 function build_archetypes() {
+  // $ is pure money
+  archetypes['$'] = clone(archetype_archetype)
+  addhand('$', 'init', function(cell) {
+    cell.life = fancy_round(base_life * archetypes['$'])
+  })
+  addhand('$', 'go', function(cell) {
+    ducats += fancy_round(base_ducats * archetypes['$'].ducats)
+    cell.life -= 1
+  })
+
   // a-z basic countdown (?)
   charloop('a', 'z', function(char) {
     // create the basic archetype
@@ -133,27 +149,20 @@ function build_archetypes() {
     addhand(char, 'post', function(cell) {
       ducats += fancy_round(base_ducats * archetypes[char].ducats)
     })
-  })
 
-  // set some things manually
-  archetypes['a'].life = 3
-  archetypes['a'].ducats = 1
-
-  // a adds $ each tick and on revert
-  addhand('a', 'go', function(cell) {
-    ducats += fancy_round(base_ducats * archetypes['a'].ducats)
-    cell.life -= 1
-  })
-
-  // b-z spawn N times then revert
-  charloop('b', 'z', function(char) {
+    // spawn N times then revert
     addhand(char, 'go', function(cell) {
       var free = find_free_nabe(cell)
+      var prev_char = char === 'a' ? '$' : String.fromCharCode(char.charCodeAt() - 1)
       if(!free) return
       cell.life -= 1
-      spawn(free, String.fromCharCode(char.charCodeAt() - 1))
+      spawn(free, prev_char)
     })
   })
+
+  // hardcode a couple things
+  archetypes['a'].life = 2
+  archetypes['$'].ducats = 1
 }
 
 function build_upgrades() {
@@ -246,12 +255,7 @@ function addhand(char, handle, fun) {
 // init
 
 function init() {
-  // set up grid
-  for(var i=0; i < w*h; i++) {
-    grid[i] = new_cell(i)
-  }
-
-  // set up stats
+  // set up elements
   last_ms = Date.now()
   var el = document.getElementById.bind(document)
   el_grid = el('grid')
@@ -260,10 +264,15 @@ function init() {
   el_upgrades = el('upgrades')
   el_messages = el('messages')
 
-  // set up nabes and diags
+  // set up grid
   for(var i=0; i < w*h; i++) {
-    add_nabes(grid[i], i)
-    add_diags(grid[i], i)
+    grid[i] = new_cell(i)
+  }
+
+ // set up nabes and diags
+  for(var j=0; j < w*h; j++) {
+    add_nabes(grid[j], j)
+    add_diags(grid[j], j)
   }
 
   // event bindings
