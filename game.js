@@ -4,8 +4,8 @@
    - pause button / "offline" mode catchup is different?
    - keyboard controls
    - upgrades: expand life and gold per-item and small global very early
-   - a -> $, to show the ducats (each $ is a base-ducats ducat gain)
-   - show prices in upgrades and chars (or money is per-char? so you have to gain different types?)
+   -- a -> $, to show the ducats (each $ is a base-ducats ducat gain)
+   -- show prices in upgrades and chars (or money is per-char? so you have to gain different types?)
    - clicking a symbol eats it for half its total value (recursive) [maybe, though auto-eaters are better, and half is probably too high (avoid clickers)]
    - unicode characters
    -- fractional respect via Math.random()
@@ -370,7 +370,7 @@ function render_price_stuff() {
 function grid_to_string() {
   var str = ""
   for(var i=0; i < w*h; i++) {
-    if(i%w == 0) str += "\n"
+    if(i%w === 0) str += "\n"
     str += grid[i].char
   }
   return str
@@ -381,7 +381,7 @@ function get_new_buttons(low, high) {
   for(var char in archetypes) {
     var price = archetypes[char].price
     if(low < price && price <= high)
-      str = str_to_button(char) + str
+      str = make_button(char, char + ': ' + price) + str
   }
   return str
 }
@@ -391,13 +391,13 @@ function get_new_upgrades(low, high) {
   for(var name in upgrades) {
     var price = upgrades[name].price
     if(low < price && price <= high)
-      str = str_to_button(name) + str
+      str = make_button(name, name + ': ' + price) + str
   }
   return str
 }
 
-function str_to_button(str) {
-  return '<span id="' + str + '">' + str + '</span>'
+function make_button(id, label) {
+  return '<span id="' + id + '">' + label + '</span>'
 }
 
 // helpers
