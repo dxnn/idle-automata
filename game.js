@@ -3,14 +3,14 @@
 /* TODO:
    - pause button / "offline" mode catchup is different?
    - keyboard controls
-   - upgrades: expand life and gold per-item and small global very early
+   - unicode characters
    -- a -> $, to show the ducats (each $ is a base-ducats ducat gain)
    -- show prices in upgrades and chars (or money is per-char? so you have to gain different types?)
-   - clicking a symbol eats it for half its total value (recursive) [maybe, though auto-eaters are better, and half is probably too high (avoid clickers)]
-   - unicode characters
+   ~- clicking a symbol eats it for half its total value (recursive) [maybe, though auto-eaters are better, and half is probably too high (avoid clickers)]
    -- fractional respect via Math.random()
    -- show buttons / upgrades as they're available
    -- different places for button vs upgrades
+   - upgrades: expand life and gold per-item and small global very early
    - upgrades:
      - per archetype: increase life, increase ducats, increase rate, % increase to children cumulative
      - overall: increate rate, add new game features (capital letters, new letters, symbols, fancy backgrounds (day/night), fertility bonus (w/ fancy highlight for good squares), ...)
@@ -19,17 +19,17 @@
 var w = 80
 var h = 40
 var grid = []
-var ducats = 1
+var ducats = 0
 var paused = false
 var last_ms = 0
-var last_max = 1
+var last_max = 0
 var upgrades = {}
 var base_rate = 1000
 var base_life = 1
 var archetypes = {}
 var base_ducats = 1
 var render_rate = 100
-var current_symbol = 'a'
+var current_symbol = '$'
 var el_grid, el_ducats, el_buttons, el_upgrades, el_messages
 
 function tick() {
@@ -137,7 +137,7 @@ function build_archetypes() {
     // create the basic archetype
     archetypes[char] = clone(archetype_archetype)
     var arch = archetypes[char]
-    arch.price = Math.pow(4, char.charCodeAt() - 97)
+    arch.price = Math.pow(4, char.charCodeAt() - 97) + (char == 'a' ? 0 : 4)
 
     // set 'life' for cell
     // THINK: different types should have different amounts of life
@@ -161,23 +161,13 @@ function build_archetypes() {
   })
 
   // hardcode a couple things
-  archetypes['a'].life = 2
   archetypes['$'].ducats = 1
+  archetypes['$'].price = 0
 }
 
 function build_upgrades() {
   upgrades =
-    { "go_faster": { price: 10
-                   , effect() { base_rate /= 2 }}
-    , "more_fast": { price: 1000
-                   , effect() { base_rate /= 2 }}
-    , "even_fast": { price: 100000
-                   , effect() { base_rate /= 2 }}
-    , "good_fast": { price: 1000000
-                   , effect() { base_rate /= 2 }}
-    , "keen_fast": { price: 1000000
-                   , effect() { base_rate /= 2 }}
-    , "more_life": { price: 10000
+    { "more_life": { price: 10000
                    , effect() { base_life *= 1.3 }}
     , "even_life": { price: 1000000
                    , effect() { base_life *= 1.3 }}
@@ -186,6 +176,24 @@ function build_upgrades() {
     , "more_gold": { price: 10000
                    , effect() { base_ducats *= 1.3 }}
     }
+
+  var adjs = ['more', 'some', 'abit', 'even', 'good', 'keen', 'supa', 'mega', 'wicd', 'ultr', 'whoa', 'best', 'tote', 'nice', 'doge']
+  adjs.forEach(function(key, i) {
+    upgrades[key+'_fast'] = { price: Math.pow(10, i+1)
+                            , effect: function() { base_rate *= 0.8 }
+                            }
+    upgrades[key+'_gold'] = { price: Math.pow(16, i+2)
+                            , effect: function() { base_ducats *= 1.5 }
+                            }
+  })
+
+  ;[1,2,3,4,5,6,7].forEach(function(n) {
+    charloop('a', 'z', function(char) {
+      upgrades[char+'_life_'+n] = { price: Math.pow(4, char.charCodeAt() - 96) + Math.pow(char.charCodeAt() - 95, n)
+                                  , effect: function() { archetypes[char].life *= 1.22 }
+                                  }
+    })
+  })
 }
 
 function find_free_nabe(cell) {
@@ -310,6 +318,7 @@ function buy_upgrade(upgrade) {
     return false
   }
 
+  ducats -= price
   upgrade.effect()
   return true
 }
