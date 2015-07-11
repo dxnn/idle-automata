@@ -1,6 +1,7 @@
 // an idle game featuring automata and fun
 
 /* TODO:
+   - toggle mousedraw mode with a key for continuous plonking
    - pause button / "offline" mode catchup is different?
    - keyboard controls
    - unicode characters
@@ -21,16 +22,22 @@ var h = 40
 var grid = []
 var ducats = 0
 var paused = false
+var buckets = [0,1,4,10,24,64]
 var last_ms = 0
 var last_max = 0
 var upgrades = {}
+var visibles = []
 var base_rate = 1000
 var base_life = 1
+var renderers = []
 var archetypes = {}
 var base_ducats = 1
 var render_rate = 100
 var current_symbol = '$'
+var el = document.getElementById.bind(document)
 var el_grid, el_ducats, el_buttons, el_upgrades, el_messages
+
+// EVENT LOOP
 
 function tick() {
   // TODO: poke the cells in arbitrary order
@@ -88,9 +95,36 @@ function looper() {
   window.setTimeout(looper, Math.max(base_rate, render_rate))
 }
 
-function set_type(cell, type) {
-  cell.char = type
-  cell.handler = archetypes[type]
+
+// INITIALIZATION
+
+function init() {
+  // set up elements
+  last_ms = Date.now()
+  el_grid = el('grid')
+  el_ducats = el('ducats')
+  el_buttons = el('buttons')
+  el_upgrades = el('upgrades')
+  el_messages = el('messages')
+
+  // set up grid
+  for(var i=0; i < w*h; i++) {
+    grid[i] = new_cell(i)
+  }
+
+ // set up nabes and diags
+  for(var j=0; j < w*h; j++) {
+    add_nabes(grid[j], j)
+    add_diags(grid[j], j)
+  }
+
+  // build things
+  build_bindings()
+  build_archetypes()
+  build_upgrades()
+
+  // the main loop
+  looper()
 }
 
 function add_nabes(cell, index) {
@@ -119,6 +153,27 @@ function get_torus_cell(index, dx, dy) {
     dy = 1-h
 
   return grid[index + dx + dy*w]
+}
+
+function build_bindings() {
+  // ALL EVENT BINDINGS
+
+  el_buttons.addEventListener('click', function(ev) {
+    current_symbol = ev.target.id
+    remove_class('#buttons span', 'selected')
+    el(current_symbol).classList.add('selected')
+  })
+
+  el_upgrades.addEventListener('click', function(ev) {
+    var upgrade = upgrades[ev.target.id]
+    if(buy_upgrade(upgrade))
+      remove_visible(ev.target.id)
+  })
+
+  el_grid.addEventListener('click', function(ev) {
+    var index = click_to_index(ev)
+    set_symbol(index, current_symbol)
+  })
 }
 
 function build_archetypes() {
@@ -196,27 +251,55 @@ function build_upgrades() {
   })
 }
 
+
+// INPUT ACTIONS
+
+function buy_upgrade(upgrade) {
+  var price = upgrade.price
+  if(price > ducats) {
+    log("you can't afford that upgrade!")
+    return false
+  }
+
+  ducats -= price
+  upgrade.effect()
+  return true
+}
+
+function click_to_index(ev) {
+  var sel = window.getSelection()
+  // console.log(selection.focusNode.data[selection.focusOffset]);
+  var index = sel.focusOffset
+  return Math.max(0, index - 1 - Math.floor(index / w)) // remove newlines
+}
+
+function set_symbol(index, char) {
+  // check ducats
+  var price = archetypes[char].price
+  if(price > ducats) {
+    log("you can't afford that!")
+    return
+  }
+
+  // THINK: check current symbol is lesser?
+
+  spawn(grid[index], char)
+  ducats -= price
+}
+
+
+// ACTIONS
+
 function find_free_nabe(cell) {
-  // TODO: check in arbitrary order
   var nabe
   var dims = [[0, 1], [0, -1], [1, 0], [-1, 0]]
-  // var str  = '012302130132'
-  // var offset = rand(8)
-  // var indices = str.substr(offset, 4).split('')
 
   for(var i=0; i < 4; i++) {
     var index = rand(3)
     nabe = get_torus_cell(cell.index, dims[index][0], dims[index][1])
     if(nabe && nabe.char == " ") return nabe
   }
-  // nabe = get_torus_cell(cell.index, 0,  1)
-  // if(nabe && nabe.char == " ") return nabe
-  // nabe = get_torus_cell(cell.index, 0, -1)
-  // if(nabe && nabe.char == " ") return nabe
-  // nabe = get_torus_cell(cell.index, 1,  0)
-  // if(nabe && nabe.char == " ") return nabe
-  // nabe = get_torus_cell(cell.index, -1, 0)
-  // if(nabe && nabe.char == " ") return nabe
+
   return false
 }
 
@@ -242,7 +325,6 @@ function new_cell(i) {
          , index: i
          , nabes: []
          , diags: []
-         // , skip: 0
          }
 }
 
@@ -253,6 +335,7 @@ var archetype_archetype = { init: []
                           , price: 1
                           , ducats: 0
                           , life: 1
+                          , affordable: 99
                           }
 
 function addhand(char, handle, fun) {
@@ -260,120 +343,106 @@ function addhand(char, handle, fun) {
 }
 
 
-// init
-
-function init() {
-  // set up elements
-  last_ms = Date.now()
-  var el = document.getElementById.bind(document)
-  el_grid = el('grid')
-  el_ducats = el('ducats')
-  el_buttons = el('buttons')
-  el_upgrades = el('upgrades')
-  el_messages = el('messages')
-
-  // set up grid
-  for(var i=0; i < w*h; i++) {
-    grid[i] = new_cell(i)
-  }
-
- // set up nabes and diags
-  for(var j=0; j < w*h; j++) {
-    add_nabes(grid[j], j)
-    add_diags(grid[j], j)
-  }
-
-  // event bindings
-  el_buttons.addEventListener('click', function(ev) {
-    current_symbol = ev.target.id
-    remove_class('#buttons span', 'selected')
-    el(current_symbol).classList.add('selected')
-  })
-
-  el_upgrades.addEventListener('click', function(ev) {
-    var upgrade = upgrades[ev.target.id]
-    if(buy_upgrade(upgrade))
-      el(ev.target.id).style.display = 'none'
-  })
-
-  el_grid.addEventListener('click', function(ev) {
-    var index = click_to_index(ev)
-    set_symbol(index, current_symbol)
-  })
-
-  build_archetypes()
-  build_upgrades()
-  looper()
-}
-
-function remove_class(query, classname) {
-  var q = document.querySelectorAll(query)
-  ;[].slice.call(q).forEach(function(el) {el.classList.remove(classname)})
-}
-
-function buy_upgrade(upgrade) {
-  var price = upgrade.price
-  if(price > ducats) {
-    log("you can't afford that upgrade!")
-    return false
-  }
-
-  ducats -= price
-  upgrade.effect()
-  return true
-}
-
-// buttons
-
-function click_to_index(ev) {
-  var sel = window.getSelection()
-  // console.log(selection.focusNode.data[selection.focusOffset]);
-  var index = sel.focusOffset
-  return Math.max(0, index - 1 - Math.floor(index / w)) // remove newlines
-}
-
-function set_symbol(index, char) {
-  // check ducats
-  var price = archetypes[char].price
-  if(price > ducats) {
-    log("you can't afford that!")
-    return
-  }
-
-  // THINK: check current symbol is lesser?
-
-  spawn(grid[index], char)
-  ducats -= price
-}
-
-// renderer
+// RENDERER
 
 function render() {
-  render_cells()
-  render_stats()
-  render_price_stuff()
+  renderers.forEach(function(fun) { fun() })
 }
 
-function render_cells() {
-  el_grid.textContent = grid_to_string()
+renderers.push(
+  function render_cells() {
+    el_grid.textContent = grid_to_string()
+  }
+)
+
+renderers.push(
+  function render_stats() {
+    el_ducats.textContent = ducats
+  }
+)
+
+renderers.push(
+  function render_visibles() {
+    visibles.forEach(function(pair) {
+      var id    = pair[0]
+      var thing = pair[1]
+
+      if(thing.affordable == Math.floor(ducats / thing.price)) return
+
+      var old_afford = thing.affordable
+      thing.affordable = Math.floor(ducats / thing.price)
+
+      if(bucket_value(thing.affordable) == bucket_value(old_afford)) return
+
+      bucket_style_do(id, thing)
+    })
+  }
+)
+
+renderers.push(
+  function render_price_stuff() {
+    if(ducats <= last_max) return
+
+    var new_button  = get_new_buttons (last_max, ducats)
+    var new_upgrade = get_new_upgrades(last_max, ducats)
+
+    last_max = ducats
+    if(!new_button && !new_upgrade) return
+
+    // TODO: innerHTML is kind of a drag
+    el_buttons .innerHTML = new_button  + el_buttons .innerHTML
+    el_upgrades.innerHTML = new_upgrade + el_upgrades.innerHTML
+  }
+)
+
+function bucket_value(num) {
+  for(var i = buckets.length - 1; i >= 0; i--)
+    if(num >= buckets[i]) return buckets[i]
+
+  return 0
 }
 
-function render_stats() {
-  el_ducats.textContent = ducats
+function bucket_style_do(id, thing) {
+  var el_thing = document.getElementById(id)
+
+  for(var i = 0; i < buckets.length; i++)
+    el_thing.classList.remove('buy' + buckets[i])
+
+  el_thing.classList.add('buy' + bucket_value(thing.affordable))
 }
 
-function render_price_stuff() {
-  if(ducats <= last_max) return
+function remove_visible(id) {
+  el(id).style.display = 'none'
+  visibles = visibles.filter(function(v) { return v[0] != id })
+}
 
-  var new_button  = get_new_buttons (last_max, ducats)
-  var new_upgrade = get_new_upgrades(last_max, ducats)
+function get_new_buttons(low, high) {
+  var str = ''
+  for(var char in archetypes) {
+    var price = archetypes[char].price
+    if(low < price && price <= high)
+      str = make_visible(char, archetypes[char]) + str
+  }
+  return str
+}
 
-  last_max = ducats
-  if(!new_button && !new_upgrade) return
+function get_new_upgrades(low, high) {
+  var str = ''
+  for(var name in upgrades) {
+    var price = upgrades[name].price
+    if(low < price && price <= high)
+      str = make_visible(name, upgrades[name]) + str
+  }
+  return str
+}
 
-  // TODO: innerHTML is kind of a drag
-  el_buttons .innerHTML = new_button  + el_buttons .innerHTML
-  el_upgrades.innerHTML = new_upgrade + el_upgrades.innerHTML
+function make_visible(id, thing, label) {
+  visibles.push([id, thing])
+  return make_button(id, label || id + ': ' + thing.price)
+}
+
+function make_button(id, label) {
+  return '<span id="' + id + '">' + label + '</span>'
 }
 
 function grid_to_string() {
@@ -385,31 +454,7 @@ function grid_to_string() {
   return str
 }
 
-function get_new_buttons(low, high) {
-  var str = ''
-  for(var char in archetypes) {
-    var price = archetypes[char].price
-    if(low < price && price <= high)
-      str = make_button(char, char + ': ' + price) + str
-  }
-  return str
-}
-
-function get_new_upgrades(low, high) {
-  var str = ''
-  for(var name in upgrades) {
-    var price = upgrades[name].price
-    if(low < price && price <= high)
-      str = make_button(name, name + ': ' + price) + str
-  }
-  return str
-}
-
-function make_button(id, label) {
-  return '<span id="' + id + '">' + label + '</span>'
-}
-
-// helpers
+// HELPERS
 
 function charloop(from, last, fun) {
   var from_ord = from.charCodeAt()
@@ -438,6 +483,11 @@ function clone(obj) {
     log(e)
     return {}
   }
+}
+
+function remove_class(query, classname) {
+  var q = document.querySelectorAll(query)
+  ;[].slice.call(q).forEach(function(el) {el.classList.remove(classname)})
 }
 
 var clear_message = throttle(function() { el_messages.textContent = '' }, 3000)
@@ -471,5 +521,7 @@ function debounce(fun, ms) {
     }, ms)
   }
 }
+
+// STARTUP
 
 init()
