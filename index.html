@@ -9,30 +9,29 @@
       }
       #buttons span, #upgrades span {
         padding: 2px 10px 2px 5px;
-        background-color: aliceblue;
+        background-color: hsl(220,100%,95%);
         margin: 2px;
         cursor: pointer;
       }
       #buttons span.buy0, #upgrades span.buy0 {
-        background-color: red;
+        background-color: hsl(0,100%,95%);
       }
       #buttons span.buy1, #upgrades span.buy1 {
-        background-color: orange;
+        background-color: hsl(40,100%,95%);
       }
       #buttons span.buy4, #upgrades span.buy4 {
-        background-color: yellow;
+        background-color: hsl(70,100%,95%);
       }
       #buttons span.buy10, #upgrades span.buy10 {
-        background-color: pink;
+        background-color: hsl(110,100%,95%);
       }
       #buttons span.buy24, #upgrades span.buy24 {
-        background-color: green;
+        background-color: hsl(170,100%,95%);
       }
       #buttons span.buy64, #upgrades span.buy64 {
-        background-color: blue;
+        background-color: hsl(220,100%,95%);
       }
       #buttons span.selected, #upgrades span.selected {
-        /*         background-color: pink; */
         font-weight: bold;
       }
       #messages {
@@ -41,22 +40,22 @@
     </style>
   </head>
   <body>
-    <p>
+    <p style="display:none">
       Ducats: <span id="ducats">1</span>
     </p>
     <div>
-      <span>Generators</span>
+      <span style="display:none">Generators</span>
       <span id="buttons">
-        <span id="$" class="selected">$: 0</span>
+        <span id="$" class="selected">$</span>
       </span>
     </div>
     <div>
-      <span>Upgrades</span>
+      <span style="display:none">Upgrades</span>
       <span id="upgrades">
       </span>
     </div>
     <div>
-      <span>Messages</span>
+      <span style="display:none">Messages</span>
       <span id="messages">
       </span>
     </div>

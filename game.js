@@ -5,6 +5,9 @@
    - pause button / "offline" mode catchup is different?
    - keyboard controls
    - unicode characters
+   - color buttons on arrival
+   - solve starting upgrades required for 'a' utility...
+   -- good colours
    -- a -> $, to show the ducats (each $ is a base-ducats ducat gain)
    -- show prices in upgrades and chars (or money is per-char? so you have to gain different types?)
    ~- clicking a symbol eats it for half its total value (recursive) [maybe, though auto-eaters are better, and half is probably too high (avoid clickers)]
@@ -222,29 +225,27 @@ function build_archetypes() {
 
 function build_upgrades() {
   upgrades =
-    { "more_life": { price: 10000
-                   , effect() { base_life *= 1.3 }}
-    , "even_life": { price: 1000000
-                   , effect() { base_life *= 1.3 }}
-    , "good_life": { price: 100000000
-                   , effect() { base_life *= 1.3 }}
-    , "more_gold": { price: 10000
-                   , effect() { base_ducats *= 1.3 }}
+    { "more life":  { price: 10000
+                    , effect() { base_life *= 1.3 }}
+    , "good life":  { price: 1000000
+                    , effect() { base_life *= 1.3 }}
+    , "great life": { price: 100000000
+                    , effect() { base_life *= 1.3 }}
     }
 
-  var adjs = ['more', 'some', 'abit', 'even', 'good', 'keen', 'supa', 'mega', 'wicd', 'ultr', 'whoa', 'best', 'tote', 'nice', 'doge']
+  var adjs = ['a bit', 'slightly', 'somewhat', 'a little', 'even', 'considerably', 'noticably', 'lots', 'much', 'appreciably', 'substantially', 'significantly', 'markedly', 'conspicuously', 'doge']
   adjs.forEach(function(key, i) {
-    upgrades[key+'_fast'] = { price: Math.pow(10, i+1)
-                            , effect: function() { base_rate *= 0.8 }
-                            }
-    upgrades[key+'_gold'] = { price: Math.pow(16, i+2)
-                            , effect: function() { base_ducats *= 1.5 }
-                            }
+    upgrades[key+' faster'] = { price: Math.pow(10, i+1)
+                              , effect: function() { base_rate *= 0.8 }
+                              }
+    upgrades[key+' richer'] = { price: Math.pow(16, i+2)
+                              , effect: function() { base_ducats *= 1.5 }
+                              }
   })
 
   ;[1,2,3,4,5,6,7].forEach(function(n) {
     charloop('a', 'z', function(char) {
-      upgrades[char+'_life_'+n] = { price: Math.pow(4, char.charCodeAt() - 96) + Math.pow(char.charCodeAt() - 95, n)
+      upgrades[char+' life level '+n] = { price: Math.pow(4, char.charCodeAt() - 96) + Math.pow(char.charCodeAt() - 95, n)
                                   , effect: function() { archetypes[char].life *= 1.22 }
                                   }
     })
@@ -438,11 +439,11 @@ function get_new_upgrades(low, high) {
 
 function make_visible(id, thing, label) {
   visibles.push([id, thing])
-  return make_button(id, label || id + ': ' + thing.price)
+  return make_button(id, label || id) // + ': ' + thing.price)
 }
 
 function make_button(id, label) {
-  return '<span id="' + id + '">' + label + '</span>'
+  return '<span id="' + id + '">' + label + ' </span>'
 }
 
 function grid_to_string() {
