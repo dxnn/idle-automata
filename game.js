@@ -162,9 +162,11 @@ function build_bindings() {
   // ALL EVENT BINDINGS
 
   el_buttons.addEventListener('click', function(ev) {
-    current_symbol = ev.target.id
-    remove_class('#buttons span', 'selected')
-    el(current_symbol).classList.add('selected')
+    switch_char(ev.target.id)
+  })
+
+  document.addEventListener('keypress', function(ev) {
+    switch_char(String.fromCharCode(ev.which))
   })
 
   el_upgrades.addEventListener('click', function(ev) {
@@ -254,6 +256,12 @@ function build_upgrades() {
 
 
 // INPUT ACTIONS
+
+function switch_char(char) {
+  current_symbol = char
+  remove_class('#buttons span', 'selected')
+  el(current_symbol).classList.add('selected')
+}
 
 function buy_upgrade(upgrade) {
   var price = upgrade.price
